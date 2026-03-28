@@ -35,7 +35,7 @@ spec:
           labelValue: "1"
           searchNamespace: ALL
   install:
-    crds: create
+    crds: Create
     remediation:
       retries: 3
   upgrade:
