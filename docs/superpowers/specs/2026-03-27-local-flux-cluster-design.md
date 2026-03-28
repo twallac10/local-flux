@@ -158,6 +158,8 @@ features:
 | Reports Controller | `8000` | report generation |
 | Reports Server | `8080` | policy report query metrics |
 
+**Note on bootstrap ordering:** Kyverno is installed by Flux (not helmfile) — Flux controllers deploy before policies are enforced. This is safe because: (1) the only `enforce` policy is `disallow-latest-tag` and Flux uses pinned image digests, not `:latest`; (2) `require-labels` is `audit` only and never blocks. A `PolicyException` for `flux-system` covers remaining edge cases.
+
 ### Configs (`infrastructure/configs/kyverno-policies/`)
 
 - Pod Security Standards (baseline + restricted) via `kyverno-policies` chart values
