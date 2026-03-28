@@ -5,7 +5,7 @@ repositories:
 releases:
   - name: flux
     chart: fluxcd-community/flux2
-    version: 2.5.1
+    version: 2.15.0
     namespace: flux-system
     createNamespace: true
     values:
