@@ -1,0 +1,75 @@
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: flux-system-exception
+  namespace: flux-system
+spec:
+  exceptions:
+    - policyName: require-labels
+      ruleNames:
+        - check-for-labels
+    - policyName: disallow-latest-tag
+      ruleNames:
+        - require-image-tag
+        - validate-image-tag
+  match:
+    any:
+      - resources:
+          namespaces:
+            - flux-system
+          kinds:
+            - Pod
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: cert-manager-exception
+  namespace: cert-manager
+spec:
+  exceptions:
+    - policyName: require-labels
+      ruleNames:
+        - check-for-labels
+  match:
+    any:
+      - resources:
+          namespaces:
+            - cert-manager
+          kinds:
+            - Pod
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: observability-exception
+  namespace: observability
+spec:
+  exceptions:
+    - policyName: require-labels
+      ruleNames:
+        - check-for-labels
+  match:
+    any:
+      - resources:
+          namespaces:
+            - observability
+          kinds:
+            - Pod
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: policy-exception
+  namespace: policy
+spec:
+  exceptions:
+    - policyName: require-labels
+      ruleNames:
+        - check-for-labels
+  match:
+    any:
+      - resources:
+          namespaces:
+            - policy
+          kinds:
+            - Pod

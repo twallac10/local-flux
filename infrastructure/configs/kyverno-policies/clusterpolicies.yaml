@@ -1,0 +1,62 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-labels
+  annotations:
+    policies.kyverno.io/title: Require Labels
+    policies.kyverno.io/description: All pods must have 'app' and 'owner' labels.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: check-for-labels
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "The labels 'app' and 'owner' are required on all pods."
+        pattern:
+          metadata:
+            labels:
+              app: "?*"
+              owner: "?*"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Tag
+    policies.kyverno.io/description: Images must use a specific tag, not ':latest'.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-image-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "An image tag is required and ':latest' is not allowed."
+        pattern:
+          spec:
+            containers:
+              - image: "*:*"
+    - name: validate-image-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Using ':latest' as the image tag is not allowed."
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.spec.containers[].image }}"
+                operator: AnyIn
+                value: ["*:latest"]
