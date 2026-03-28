@@ -1,0 +1,70 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: protect-flux-system
+  annotations:
+    policies.kyverno.io/title: Protect Flux System
+    policies.kyverno.io/description: >
+      Prevents accidental deletion of the flux-system namespace, the root
+      GitRepository and Kustomization bootstrap resources, and the Flux
+      controller Deployments. To intentionally remove Flux, delete this
+      policy first.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: block-flux-namespace-deletion
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              names: [flux-system]
+      validate:
+        message: >
+          Deleting the flux-system namespace is not allowed — this would
+          destroy the GitOps control plane. Delete the protect-flux-system
+          policy first if removal is intentional.
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.operation }}"
+                operator: Equals
+                value: DELETE
+
+    - name: block-flux-bootstrap-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - GitRepository
+                - Kustomization
+              namespaces: [flux-system]
+              names: [flux-system]
+      validate:
+        message: >
+          Deleting the root Flux bootstrap resources (GitRepository/flux-system
+          or Kustomization/flux-system) is not allowed. Delete the
+          protect-flux-system policy first if removal is intentional.
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.operation }}"
+                operator: Equals
+                value: DELETE
+
+    - name: block-flux-controller-deployments
+      match:
+        any:
+          - resources:
+              kinds: [Deployment]
+              namespaces: [flux-system]
+      validate:
+        message: >
+          Deleting Flux controller Deployments in flux-system is not allowed.
+          Delete the protect-flux-system policy first if removal is intentional.
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.operation }}"
+                operator: Equals
+                value: DELETE
