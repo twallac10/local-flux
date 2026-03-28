@@ -1,0 +1,88 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster
+  namespace: observability
+spec:
+  mode: deployment
+  replicas: 1
+  serviceAccount: otel-collector
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: flux-source-controller
+              static_configs:
+                - targets: ['source-controller.flux-system.svc.cluster.local:8080']
+            - job_name: flux-kustomize-controller
+              static_configs:
+                - targets: ['kustomize-controller.flux-system.svc.cluster.local:8080']
+            - job_name: flux-helm-controller
+              static_configs:
+                - targets: ['helm-controller.flux-system.svc.cluster.local:8080']
+            - job_name: flux-notification-controller
+              static_configs:
+                - targets: ['notification-controller.flux-system.svc.cluster.local:8080']
+            - job_name: kyverno-admission-controller
+              static_configs:
+                - targets: ['kyverno-admission-controller-metrics.policy.svc.cluster.local:8000']
+            - job_name: kyverno-background-controller
+              static_configs:
+                - targets: ['kyverno-background-controller-metrics.policy.svc.cluster.local:8000']
+            - job_name: kyverno-cleanup-controller
+              static_configs:
+                - targets: ['kyverno-cleanup-controller-metrics.policy.svc.cluster.local:8000']
+            - job_name: kyverno-reports-controller
+              static_configs:
+                - targets: ['kyverno-reports-controller-metrics.policy.svc.cluster.local:8000']
+            - job_name: kyverno-reports-server
+              static_configs:
+                - targets: ['kyverno-reports-server.policy.svc.cluster.local:8080']
+            - job_name: cert-manager
+              static_configs:
+                - targets: ['cert-manager.cert-manager.svc.cluster.local:9402']
+            - job_name: kube-state-metrics
+              static_configs:
+                - targets: ['prometheus-stack-kube-state-metrics.observability.svc.cluster.local:8080']
+            - job_name: node-exporter
+              static_configs:
+                - targets: ['prometheus-stack-prometheus-node-exporter.observability.svc.cluster.local:9100']
+            - job_name: otel-operator
+              static_configs:
+                - targets: ['opentelemetry-operator.observability.svc.cluster.local:8080']
+            - job_name: kubelet-cadvisor
+              scheme: https
+              tls_config:
+                ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                insecure_skip_verify: true
+              bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+              kubernetes_sd_configs:
+                - role: node
+              relabel_configs:
+                - action: labelmap
+                  regex: __meta_kubernetes_node_label_(.+)
+                - target_label: __address__
+                  replacement: kubernetes.default.svc.cluster.local:443
+                - source_labels: [__meta_kubernetes_node_name]
+                  regex: (.+)
+                  target_label: __metrics_path__
+                  replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+    processors:
+      batch: {}
+      resource:
+        attributes:
+          - action: insert
+            key: cluster
+            value: local-flux
+    exporters:
+      prometheusremotewrite:
+        endpoint: http://prometheus-operated.observability.svc.cluster.local:9090/api/v1/write
+      debug:
+        verbosity: basic
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          processors: [batch, resource]
+          exporters: [prometheusremotewrite, debug]
