@@ -30,6 +30,10 @@ spec:
     - policyName: require-labels
       ruleNames:
         - check-for-labels
+    - policyName: disallow-latest-tag
+      ruleNames:
+        - require-image-tag
+        - validate-image-tag
   match:
     any:
       - resources:
@@ -48,6 +52,10 @@ spec:
     - policyName: require-labels
       ruleNames:
         - check-for-labels
+    - policyName: disallow-latest-tag
+      ruleNames:
+        - require-image-tag
+        - validate-image-tag
   match:
     any:
       - resources:
@@ -66,6 +74,10 @@ spec:
     - policyName: require-labels
       ruleNames:
         - check-for-labels
+    - policyName: disallow-latest-tag
+      ruleNames:
+        - require-image-tag
+        - validate-image-tag
   match:
     any:
       - resources:
