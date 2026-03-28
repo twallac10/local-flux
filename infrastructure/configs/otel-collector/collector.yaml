@@ -12,21 +12,25 @@ spec:
       prometheus:
         config:
           scrape_configs:
-            - job_name: flux-source-controller
-              static_configs:
-                - targets: ['source-controller.flux-system.svc.cluster.local:8080']
-            - job_name: flux-kustomize-controller
-              static_configs:
-                - targets: ['kustomize-controller.flux-system.svc.cluster.local:8080']
-            - job_name: flux-helm-controller
-              static_configs:
-                - targets: ['helm-controller.flux-system.svc.cluster.local:8080']
-            - job_name: flux-notification-controller
-              static_configs:
-                - targets: ['notification-controller.flux-system.svc.cluster.local:8080']
+            # Flux controllers — no dedicated metrics services, use pod discovery on port 8080
+            - job_name: flux-controllers
+              kubernetes_sd_configs:
+                - role: pod
+                  namespaces:
+                    names: [flux-system]
+              relabel_configs:
+                - source_labels: [__meta_kubernetes_pod_container_port_number]
+                  action: keep
+                  regex: "8080"
+                - source_labels: [__meta_kubernetes_pod_label_app]
+                  target_label: job
+                - source_labels: [__meta_kubernetes_pod_ip]
+                  target_label: __address__
+                  replacement: $1:8080
+            # Kyverno — admission controller metrics service is kyverno-svc-metrics
             - job_name: kyverno-admission-controller
               static_configs:
-                - targets: ['kyverno-admission-controller-metrics.policy.svc.cluster.local:8000']
+                - targets: ['kyverno-svc-metrics.policy.svc.cluster.local:8000']
             - job_name: kyverno-background-controller
               static_configs:
                 - targets: ['kyverno-background-controller-metrics.policy.svc.cluster.local:8000']
@@ -36,9 +40,13 @@ spec:
             - job_name: kyverno-reports-controller
               static_configs:
                 - targets: ['kyverno-reports-controller-metrics.policy.svc.cluster.local:8000']
+            # Kyverno reports server — HTTPS only on port 4443
             - job_name: kyverno-reports-server
+              scheme: https
+              tls_config:
+                insecure_skip_verify: true
               static_configs:
-                - targets: ['kyverno-reports-server.policy.svc.cluster.local:8080']
+                - targets: ['kyverno-reports-server.policy.svc.cluster.local:443']
             - job_name: cert-manager
               static_configs:
                 - targets: ['cert-manager.cert-manager.svc.cluster.local:9402']
