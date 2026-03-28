@@ -1,0 +1,19 @@
+repositories:
+  - name: fluxcd-community
+    url: https://fluxcd-community.github.io/helm-charts
+
+releases:
+  - name: flux
+    chart: fluxcd-community/flux2
+    version: 2.5.1
+    namespace: flux-system
+    createNamespace: true
+    values:
+      - ./values/flux.yaml
+    hooks:
+      - events: [postsync]
+        command: kubectl
+        args:
+          - apply
+          - -f
+          - bootstrap.yaml
