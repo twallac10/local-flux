@@ -10,8 +10,10 @@ tasks:
   install_flux:
     desc: Install Flux and bootstrap GitOps
     vars:
-      GITHUB_USERNAME: $(gh api user | jq -r .login)
-      GITHUB_TOKEN: $(gh auth token)
+      GITHUB_USERNAME:
+        sh: gh api user | jq -r .login
+      GITHUB_TOKEN:
+        sh: gh auth token
     cmds:
       - helmfile apply
       - |
